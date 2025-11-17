@@ -13,11 +13,13 @@ A modern, responsive web application that provides personalized meal recommendat
   - Dietary preferences (vegetarian, vegan, keto, etc.)
   - Allergies and medical conditions
   - Budget and cooking preferences
-- **Smart Meal Recommendations**: Rule-based engine that generates personalized meal suggestions based on:
+- **AI-Powered Meal Recommendations**: Gemini 1.5 Flash generates personalized meal suggestions based on:
   - Dietary preferences and restrictions
-  - Health goals (weight loss, muscle gain, maintenance, etc.)
-  - Activity levels
+  - Health goals (weight loss, muscle gain, energy, general health)
+  - Activity levels and BMI
   - Allergies and food restrictions
+  - Personalized health tips and nutritional insights
+  - Fallback to rule-based engine if AI unavailable
 - **Subscription Plans**: Three tiers (Weekly, Monthly, Quarterly) with pricing cards
 - **Mock Payment System**: Secure-looking payment flow for MVP demonstration
 - **Dark/Light Mode**: Full theme support with system preference detection
@@ -92,12 +94,22 @@ cd Karthik-CP
 npm install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+# Add your Gemini API key to .env.local
+```
+
+4. Get your free Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+5. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+**For detailed setup instructions, see [SETUP.md](./SETUP.md)**
 
 ### Build for Production
 
@@ -119,10 +131,19 @@ This project is optimized for Vercel deployment:
 
 ### Environment Variables
 
-For MVP, no environment variables are required. For production:
-- Add database connection strings
-- Add authentication secrets
-- Add payment gateway API keys
+**Required for AI Features:**
+```bash
+GEMINI_API_KEY=your-gemini-api-key-here
+```
+
+**Optional (Demo Defaults):**
+```bash
+DEMO_EMAIL=demo@healthybite.com
+DEMO_PASSWORD=demo123
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+See [SETUP.md](./SETUP.md) for detailed configuration guide.
 
 ## User Flow
 
@@ -136,14 +157,17 @@ For MVP, no environment variables are required. For production:
 
 ## Key Components
 
-### Recommendation Engine
+### AI Recommendation Engine
 
-The rule-based recommendation engine (`lib/recommendationEngine.ts`) considers:
-- Dietary preferences (filters meals by diet type)
-- Health goals (prioritizes meals matching objectives)
-- Activity level (adjusts calorie recommendations)
-- Allergies (excludes incompatible ingredients)
-- Calculates BMI and provides health insights
+The AI-powered recommendation system (`lib/llmService.ts`) uses Google Gemini 1.5 Flash to:
+- Generate 5 personalized meal recommendations with full nutritional data
+- Provide health tips tailored to user's BMI and goals
+- Explain why specific meals were chosen
+- Define nutritional strategy (high protein, low carb, etc.)
+- Calculate BMI and categorize health status
+- Fallback to rule-based engine (`lib/recommendationEngine.ts`) if AI unavailable
+
+**Free tier:** 1,500 AI requests per day with Gemini 1.5 Flash
 
 ### API Routes
 
@@ -157,10 +181,11 @@ All API routes are mock implementations ready to be connected to a real backend:
 
 ## Future Enhancements
 
+- [x] AI-powered meal recommendations ✅ (Gemini 1.5 Flash)
+- [x] Demo authentication with credentials ✅
 - [ ] Real database integration (PostgreSQL/MongoDB)
 - [ ] JWT-based authentication
 - [ ] Real payment gateway (Stripe/Razorpay)
-- [ ] AI-powered meal recommendations
 - [ ] User dashboard with order tracking
 - [ ] Meal customization and swapping
 - [ ] Weekly meal calendar
@@ -171,11 +196,15 @@ All API routes are mock implementations ready to be connected to a real backend:
 ## MVP Limitations
 
 This is an MVP (Minimum Viable Product):
-- Authentication uses localStorage (not secure for production)
+- Authentication uses demo credentials + localStorage (not secure for production)
 - Payment is mocked (no real transactions)
-- Meal recommendations are rule-based (not AI-powered)
+- AI recommendations limited to Gemini free tier (1,500 requests/day)
 - No real database (data stored in localStorage)
 - No email notifications
+
+**Demo Credentials:**
+- Email: demo@healthybite.com
+- Password: demo123
 
 ## Performance
 
