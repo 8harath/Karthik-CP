@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const { name, email, password } = await request.json();
 
-    // Mock registration - in production, save to database
+    // Validate input
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "All fields are required" },
@@ -19,9 +19,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock successful registration
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address" },
+        { status: 400 }
+      );
+    }
+
+    // Mock registration - data stored in localStorage on client side
     const user = {
-      id: "mock-user-id",
+      id: `user-${Date.now()}`,
       email: email,
       name: name,
     };
@@ -29,9 +38,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user,
-      message: "Registration successful",
+      message: "Registration successful! Note: This is a demo - data is stored locally.",
     });
   } catch (error) {
+    console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -11,16 +11,32 @@ export default function LoginPage() {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // Mock authentication - simulate API call
-    setTimeout(() => {
-      // Store mock user session
-      localStorage.setItem("user", JSON.stringify({ email: formData.email }));
-      setLoading(false);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      // Store user session
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       // Check if user has completed questionnaire
       const hasCompletedQuestionnaire = localStorage.getItem("healthProfile");
@@ -30,7 +46,11 @@ export default function LoginPage() {
       } else {
         router.push("/questionnaire");
       }
-    }, 1000);
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,7 +63,24 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Demo Credentials Info */}
+        <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            🔑 Demo Credentials
+          </h3>
+          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>Email:</strong> demo@healthybite.com</p>
+            <p><strong>Password:</strong> demo123</p>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
