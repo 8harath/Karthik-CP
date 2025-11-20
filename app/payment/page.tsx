@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/lib/currency";
 
 const planDetails: Record<string, { name: string; price: number; duration: string }> = {
-  weekly: { name: "Weekly Plan", price: 49, duration: "per week" },
-  monthly: { name: "Monthly Plan", price: 179, duration: "per month" },
-  quarterly: { name: "Quarterly Plan", price: 499, duration: "per 3 months" },
+  weekly: { name: "Weekly Plan", price: 4100, duration: "per week" },
+  monthly: { name: "Monthly Plan", price: 14900, duration: "per month" },
+  quarterly: { name: "Quarterly Plan", price: 41500, duration: "per 3 months" },
 };
 
 export default function PaymentPage() {
@@ -64,25 +65,25 @@ export default function PaymentPage() {
   const plan = planDetails[selectedPlan];
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-6 md:py-10 lg:py-12">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Complete Your Purchase</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">Complete Your Purchase</h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
             Secure checkout - Your information is protected
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
           {/* Payment Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold mb-6">Payment Information</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg md:rounded-xl shadow-lg p-5 md:p-6 lg:p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl md:text-2xl font-bold mb-5 md:mb-6">Payment Information</h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5 lg:space-y-6">
                 {/* Card Number */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">
                     Card Number
                   </label>
                   <input
@@ -98,7 +99,7 @@ export default function PaymentPage() {
                         });
                       }
                     }}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                     placeholder="1234 5678 9012 3456"
                     maxLength={19}
                   />
@@ -106,7 +107,7 @@ export default function PaymentPage() {
 
                 {/* Cardholder Name */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">
                     Cardholder Name
                   </label>
                   <input
@@ -116,15 +117,15 @@ export default function PaymentPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, cardName: e.target.value })
                     }
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                     placeholder="John Doe"
                   />
                 </div>
 
                 {/* Expiry and CVV */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">
                       Expiry Date
                     </label>
                     <input
@@ -140,13 +141,13 @@ export default function PaymentPage() {
                           setFormData({ ...formData, expiryDate: value });
                         }
                       }}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                       placeholder="MM/YY"
                       maxLength={5}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">CVV</label>
+                    <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">CVV</label>
                     <input
                       type="text"
                       required
@@ -157,7 +158,7 @@ export default function PaymentPage() {
                           setFormData({ ...formData, cvv: value });
                         }
                       }}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                      className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                       placeholder="123"
                       maxLength={3}
                     />
@@ -166,7 +167,7 @@ export default function PaymentPage() {
 
                 {/* Billing Address */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">
                     Billing Address
                   </label>
                   <input
@@ -179,14 +180,14 @@ export default function PaymentPage() {
                         billingAddress: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                     placeholder="123 Main Street, City, State"
                   />
                 </div>
 
                 {/* Zip Code */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs md:text-sm font-medium mb-1.5 md:mb-2">
                     Zip Code
                   </label>
                   <input
@@ -199,15 +200,15 @@ export default function PaymentPage() {
                         setFormData({ ...formData, zipCode: value });
                       }
                     }}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                     placeholder="12345"
                     maxLength={6}
                   />
                 </div>
 
                 {/* Mock Notice */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-blue-800 dark:text-blue-300">
                     <strong>Demo Mode:</strong> This is a mock payment page. No actual payment will be processed. Use any test data to proceed.
                   </p>
                 </div>
@@ -216,7 +217,7 @@ export default function PaymentPage() {
                 <button
                   type="submit"
                   disabled={processing}
-                  className="w-full py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 focus:ring-4 focus:ring-primary-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 md:py-4 text-base md:text-lg bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 focus:ring-4 focus:ring-primary-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {processing ? (
                     <span className="flex items-center justify-center gap-2">
@@ -242,15 +243,15 @@ export default function PaymentPage() {
                       Processing...
                     </span>
                   ) : (
-                    `Pay $${plan.price}`
+                    `Pay ${formatCurrency(plan.price)}`
                   )}
                 </button>
               </form>
 
               {/* Security Badge */}
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
+              <div className="mt-4 md:mt-6 flex items-center justify-center gap-2 text-xs md:text-sm text-gray-500">
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4 md:w-5 md:h-5"
                   fill="none"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -267,31 +268,31 @@ export default function PaymentPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 sticky top-24">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg md:rounded-xl shadow-lg p-5 md:p-6 border border-gray-200 dark:border-gray-700 lg:sticky lg:top-24">
+              <h2 className="text-lg md:text-xl font-bold mb-4">Order Summary</h2>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between">
+              <div className="space-y-3 md:space-y-4 mb-5 md:mb-6">
+                <div className="flex justify-between text-sm md:text-base">
                   <span className="text-gray-600 dark:text-gray-400">Plan</span>
                   <span className="font-semibold">{plan.name}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm md:text-base">
                   <span className="text-gray-600 dark:text-gray-400">Duration</span>
                   <span className="font-semibold capitalize">{plan.duration}</span>
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex justify-between text-lg font-bold">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 md:pt-4">
+                  <div className="flex justify-between text-base md:text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-primary-600">${plan.price}</span>
+                    <span className="text-primary-600">{formatCurrency(plan.price)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 md:p-4">
+                <h3 className="font-semibold text-sm md:text-base text-green-900 dark:text-green-100 mb-2">
                   What&apos;s Included:
                 </h3>
-                <ul className="space-y-1 text-sm text-green-800 dark:text-green-300">
+                <ul className="space-y-1 text-xs md:text-sm text-green-800 dark:text-green-300">
                   <li>✓ Personalized meal plans</li>
                   <li>✓ Fresh ingredients</li>
                   <li>✓ Flexible delivery</li>

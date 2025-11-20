@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/lib/currency";
 
 interface Plan {
   id: string;
@@ -19,7 +20,7 @@ const plans: Plan[] = [
   {
     id: "weekly",
     name: "Weekly Plan",
-    price: 49,
+    price: 4100,
     duration: "per week",
     meals: 7,
     features: [
@@ -33,8 +34,8 @@ const plans: Plan[] = [
   {
     id: "monthly",
     name: "Monthly Plan",
-    price: 179,
-    originalPrice: 196,
+    price: 14900,
+    originalPrice: 16300,
     duration: "per month",
     meals: 28,
     popular: true,
@@ -51,8 +52,8 @@ const plans: Plan[] = [
   {
     id: "quarterly",
     name: "Quarterly Plan",
-    price: 499,
-    originalPrice: 588,
+    price: 41500,
+    originalPrice: 48900,
     duration: "per 3 months",
     meals: 84,
     savings: "Save 15%",
@@ -88,34 +89,34 @@ export default function SubscriptionsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 px-2">
             Select the perfect subscription plan for your healthy eating journey
           </p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-12">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 transition-all cursor-pointer ${
+              className={`relative bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl shadow-lg border-2 transition-all cursor-pointer ${
                 selectedPlan === plan.id
-                  ? "border-primary-600 ring-4 ring-primary-200 dark:ring-primary-800 scale-105"
+                  ? "border-primary-600 ring-2 md:ring-4 ring-primary-200 dark:ring-primary-800 md:scale-105"
                   : "border-gray-200 dark:border-gray-700 hover:border-primary-400"
-              } ${plan.popular ? "md:scale-105" : ""}`}
+              } ${plan.popular ? "md:scale-105 border-primary-300" : ""}`}
               onClick={() => handleSelectPlan(plan.id)}
             >
               {/* Popular Badge */}
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-primary-600 to-green-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                <div className="absolute -top-3 md:-top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-primary-600 to-green-600 text-white px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-semibold shadow-lg">
                     Most Popular
                   </span>
                 </div>
@@ -123,43 +124,43 @@ export default function SubscriptionsPage() {
 
               {/* Savings Badge */}
               {plan.savings && (
-                <div className="absolute top-4 right-4">
-                  <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
+                <div className="absolute top-3 md:top-4 right-3 md:right-4">
+                  <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 md:px-3 py-1 rounded-full text-xs font-semibold">
                     {plan.savings}
                   </span>
                 </div>
               )}
 
-              <div className="p-8">
+              <div className="p-5 md:p-6 lg:p-8">
                 {/* Plan Name */}
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <h3 className="text-xl md:text-2xl font-bold mb-2">{plan.name}</h3>
 
                 {/* Price */}
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-primary-600">
-                      ${plan.price}
+                <div className="mb-5 md:mb-6">
+                  <div className="flex items-baseline gap-1 md:gap-2 flex-wrap">
+                    <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600">
+                      {formatCurrency(plan.price)}
                     </span>
                     {plan.originalPrice && (
-                      <span className="text-xl text-gray-400 line-through">
-                        ${plan.originalPrice}
+                      <span className="text-base md:text-lg lg:text-xl text-gray-400 line-through">
+                        {formatCurrency(plan.originalPrice)}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">
                     {plan.duration}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-500 mt-1">
                     {plan.meals} meals included
                   </p>
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 md:space-y-3 mb-6 md:mb-8">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
+                    <li key={index} className="flex items-start gap-2 md:gap-3">
                       <svg
-                        className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5"
+                        className="w-4 h-4 md:w-5 md:h-5 text-primary-600 flex-shrink-0 mt-0.5"
                         fill="none"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -169,7 +170,7 @@ export default function SubscriptionsPage() {
                       >
                         <path d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                      <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                         {feature}
                       </span>
                     </li>
@@ -182,7 +183,7 @@ export default function SubscriptionsPage() {
                     e.stopPropagation();
                     handleSelectPlan(plan.id);
                   }}
-                  className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                  className={`w-full py-3 md:py-3.5 rounded-lg font-semibold transition-all text-sm md:text-base ${
                     selectedPlan === plan.id
                       ? "bg-primary-600 text-white"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -200,7 +201,7 @@ export default function SubscriptionsPage() {
           <div className="text-center">
             <button
               onClick={handleProceedToPayment}
-              className="px-12 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="w-full md:w-auto px-8 md:px-12 py-3.5 md:py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl md:transform md:hover:scale-105 text-base md:text-lg"
             >
               Proceed to Payment
             </button>
@@ -208,35 +209,35 @@ export default function SubscriptionsPage() {
         )}
 
         {/* Features Grid */}
-        <div className="mt-20 pt-12 border-t border-gray-200 dark:border-gray-800">
-          <h2 className="text-3xl font-bold text-center mb-12">
+        <div className="mt-12 md:mt-16 lg:mt-20 pt-8 md:pt-10 lg:pt-12 border-t border-gray-200 dark:border-gray-800">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 lg:mb-12 px-4">
             Why Choose HealthyBite?
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🥗</span>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            <div className="text-center px-4">
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <span className="text-2xl md:text-3xl">🥗</span>
               </div>
-              <h3 className="text-xl font-bold mb-2">Personalized Nutrition</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h3 className="text-lg md:text-xl font-bold mb-2">Personalized Nutrition</h3>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
                 Every meal is tailored to your unique health profile and goals
               </p>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🚚</span>
+            <div className="text-center px-4">
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <span className="text-2xl md:text-3xl">🚚</span>
               </div>
-              <h3 className="text-xl font-bold mb-2">Convenient Delivery</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h3 className="text-lg md:text-xl font-bold mb-2">Convenient Delivery</h3>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
                 Fresh ingredients and meals delivered right to your doorstep
               </p>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">💪</span>
+            <div className="text-center px-4">
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <span className="text-2xl md:text-3xl">💪</span>
               </div>
-              <h3 className="text-xl font-bold mb-2">Achieve Your Goals</h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h3 className="text-lg md:text-xl font-bold mb-2">Achieve Your Goals</h3>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
                 Whether it&apos;s weight loss, muscle gain, or better health, we&apos;ve got you covered
               </p>
             </div>
@@ -244,26 +245,26 @@ export default function SubscriptionsPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">
+        <div className="mt-12 md:mt-16">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 px-4">
             Frequently Asked Questions
           </h2>
-          <div className="max-w-3xl mx-auto space-y-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-bold mb-2">Can I cancel anytime?</h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <div className="max-w-3xl mx-auto space-y-3 md:space-y-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="font-bold mb-2 text-sm md:text-base">Can I cancel anytime?</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
                 Yes! All our plans are flexible. You can cancel or pause your subscription at any time with no penalties.
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-bold mb-2">How fresh are the ingredients?</h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="font-bold mb-2 text-sm md:text-base">How fresh are the ingredients?</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
                 We source fresh, high-quality ingredients and deliver them within 24-48 hours to ensure maximum freshness.
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-bold mb-2">Can I customize my meals?</h4>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+              <h4 className="font-bold mb-2 text-sm md:text-base">Can I customize my meals?</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
                 Absolutely! Your meals are already personalized based on your profile. You can also swap meals or adjust preferences anytime.
               </p>
             </div>
