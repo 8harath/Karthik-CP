@@ -32,19 +32,37 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // Mock registration - simulate API call
-    setTimeout(() => {
-      // Store mock user data
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-        })
-      );
-      setLoading(false);
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Registration failed");
+        setLoading(false);
+        return;
+      }
+
+      // Store user session
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to questionnaire
       router.push("/questionnaire");
-    }, 1000);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
