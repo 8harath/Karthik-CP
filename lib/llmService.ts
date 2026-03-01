@@ -26,14 +26,53 @@ export interface LLMRecommendationResponse {
 }
 
 /**
- * Generate AI-powered meal recommendations using Gemini 1.5 Flash
+ * Retry a function with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 2,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | unknown;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.warn(`Attempt ${attempt + 1}/${maxRetries + 1} failed:`, error instanceof Error ? error.message : error);
+
+      if (attempt < maxRetries) {
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Add a timeout to a promise
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
+/**
+ * Generate AI-powered meal recommendations using Gemini 2.0 Flash
  */
 export async function generateMealRecommendationsWithLLM(
   profile: HealthProfile
 ): Promise<LLMRecommendationResponse> {
   try {
     const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     // Calculate BMI
     const height = parseFloat(profile.height);
@@ -44,8 +83,12 @@ export async function generateMealRecommendationsWithLLM(
     // Create detailed prompt for Gemini
     const prompt = createMealRecommendationPrompt(profile, bmi, bmiCategory);
 
-    // Generate recommendations
-    const result = await model.generateContent(prompt);
+    // Generate recommendations with retry and timeout
+    const result = await withRetry(
+      () => withTimeout(model.generateContent(prompt), 30000),
+      2
+    );
+
     const response = await result.response;
     const text = response.text();
 
@@ -155,10 +198,19 @@ function parseGeminiResponse(text: string): {
   try {
     // Clean the response - remove markdown code blocks if present
     let cleanedText = text.trim();
-    if (cleanedText.startsWith("```json")) {
-      cleanedText = cleanedText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
-    } else if (cleanedText.startsWith("```")) {
-      cleanedText = cleanedText.replace(/```\n?/g, "");
+
+    // Remove ```json ... ``` or ``` ... ``` wrappers
+    const jsonBlockMatch = cleanedText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+    if (jsonBlockMatch) {
+      cleanedText = jsonBlockMatch[1].trim();
+    }
+
+    // Try to extract JSON object if there's surrounding text
+    if (!cleanedText.startsWith("{")) {
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedText = jsonMatch[0];
+      }
     }
 
     const parsed = JSON.parse(cleanedText);
@@ -168,14 +220,29 @@ function parseGeminiResponse(text: string): {
       throw new Error("Invalid response structure: missing meals array");
     }
 
+    // Ensure each meal has required fields with defaults
+    const validatedMeals = parsed.meals.slice(0, 5).map((meal: Record<string, unknown>, index: number) => ({
+      id: meal.id || index + 1,
+      name: meal.name || `Meal ${index + 1}`,
+      description: meal.description || "A nutritious meal tailored for you",
+      calories: Number(meal.calories) || 400,
+      protein: Number(meal.protein) || 20,
+      carbs: Number(meal.carbs) || 40,
+      fats: Number(meal.fats) || 15,
+      type: meal.type || "balanced",
+      tags: Array.isArray(meal.tags) ? meal.tags : [],
+      image: meal.image || "🍽️",
+    }));
+
     return {
-      meals: parsed.meals.slice(0, 5), // Ensure max 5 meals
-      healthTips: parsed.healthTips || [],
+      meals: validatedMeals,
+      healthTips: Array.isArray(parsed.healthTips) ? parsed.healthTips : [],
       whyTheseMeals: parsed.whyTheseMeals || "These meals are tailored to your health profile.",
       nutritionalFocus: parsed.nutritionalFocus || "Balanced nutrition for your goals.",
     };
   } catch (error) {
     console.error("Error parsing Gemini response:", error);
+    console.error("Raw response text:", text.substring(0, 500));
     throw new Error("Failed to parse LLM response");
   }
 }
