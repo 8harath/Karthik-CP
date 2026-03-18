@@ -1,234 +1,115 @@
-# HealthyBite - Personalized Meal Plans & Subscriptions
+# HealthyBite
 
-A modern, responsive web application that provides personalized meal recommendations and subscription-based food delivery services. Built with Next.js 15, TypeScript, and Tailwind CSS.
+HealthyBite is a Next.js application for personalized meal recommendations and subscription-based healthy meal planning. The current repository is best described as a polished MVP: the UI is well-developed, the recommendation flow works end-to-end, and Gemini-backed meal suggestions are integrated, but authentication, persistence, billing, and deployment controls are still demo-grade.
 
-## Features
+## Repository Snapshot
 
-### ✨ Core Functionality
-
-- **User Authentication**: Simple registration, login, and password recovery (mock implementation)
-- **Health Questionnaire**: 12-input comprehensive health profile form covering:
-  - Basic information (age, gender, height, weight)
-  - Lifestyle metrics (activity level, health goals, meals per day)
-  - Dietary preferences (vegetarian, vegan, keto, etc.)
-  - Allergies and medical conditions
-  - Budget and cooking preferences
-- **AI-Powered Meal Recommendations**: Gemini 1.5 Flash generates personalized meal suggestions based on:
-  - Dietary preferences and restrictions
-  - Health goals (weight loss, muscle gain, energy, general health)
-  - Activity levels and BMI
-  - Allergies and food restrictions
-  - Personalized health tips and nutritional insights
-  - Fallback to rule-based engine if AI unavailable
-- **Subscription Plans**: Three tiers (Weekly, Monthly, Quarterly) with pricing cards
-- **Mock Payment System**: Secure-looking payment flow for MVP demonstration
-- **Dark/Light Mode**: Full theme support with system preference detection
-- **Responsive Design**: Mobile-first, works perfectly on all devices
-
-### 🎨 UI/UX Features
-
-- Clean, modern interface with health/wellness aesthetic
-- Smooth animations and transitions
-- Accessible and user-friendly forms
-- Progress tracking for multi-step questionnaire
-- Interactive pricing cards with plan comparison
+- Purpose: collect a user's health profile, generate meal recommendations, and drive them into a mock subscription flow.
+- Maturity: MVP, not production-ready.
+- Deployment target: Vercel-friendly Next.js app, with future backend and infrastructure hardening still required.
+- Current versioning: `0.1.0`, following pre-1.0 SemVer.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Theme Management**: next-themes
-- **State Management**: React hooks + localStorage (MVP)
-- **API**: Next.js API Routes (mock backend)
+- Framework: Next.js 15 App Router
+- Language: TypeScript
+- UI: React 18, Tailwind CSS
+- Theming: `next-themes`
+- AI integration: Google Gemini via `@google/generative-ai`
+- Test utilities: custom verification scripts in `scripts/` and a Jest-style test file that currently needs formal test-runner setup
 
-## Project Structure
+## Architecture
 
-```
-healthybite/
-├── app/
-│   ├── api/               # API routes (mock backend)
-│   │   ├── auth/          # Authentication endpoints
-│   │   ├── profile/       # Health profile management
-│   │   ├── recommendations/ # Meal recommendations
-│   │   └── subscription/  # Subscription management
-│   ├── forgot-password/   # Password recovery page
-│   ├── login/             # Login page
-│   ├── payment/           # Payment pages
-│   │   └── success/       # Payment success page
-│   ├── questionnaire/     # Health profile questionnaire
-│   ├── recommendations/   # Meal recommendations display
-│   ├── register/          # Registration page
-│   ├── subscriptions/     # Subscription plans page
-│   ├── layout.tsx         # Root layout with theme provider
-│   ├── page.tsx           # Landing page
-│   └── globals.css        # Global styles
-├── components/            # Reusable components
-│   ├── Footer.tsx
-│   ├── Header.tsx
-│   ├── ThemeProvider.tsx
-│   └── ThemeToggle.tsx
-├── lib/                   # Utility functions
-│   └── recommendationEngine.ts  # Meal recommendation logic
-└── public/                # Static assets
-
+```text
+.
+|-- app/                 Next.js routes, pages, and API endpoints
+|-- components/          Shared UI components
+|-- lib/                 Recommendation engine, Gemini service, utilities
+|-- scripts/             Verification and smoke-test scripts
+|-- __tests__/           Test files (currently incomplete test harness)
+|-- docs/                Project, setup, presentation, and validation docs
+|-- .github/workflows/   CI definitions
 ```
 
-## Getting Started
+## Key Product Flows
+
+1. User signs up or logs in through demo auth routes.
+2. User completes a multi-step health questionnaire.
+3. The app posts profile data to `/api/recommendations`.
+4. Gemini generates recommendations when configured.
+5. The app falls back to the rule-based engine if Gemini is unavailable.
+6. The user selects a subscription plan and completes a mock payment flow.
+
+## Local Development
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- npm or yarn package manager
+- Node.js 20+
+- npm 10+
 
-### Installation
+### Setup
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd Karthik-CP
-```
-
-2. Install dependencies:
 ```bash
 npm install
+Copy-Item .env.example .env.local
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.local.example .env.local
-# Add your Gemini API key to .env.local
-```
+Set `GEMINI_API_KEY` in `.env.local` if you want live AI responses.
 
-4. Get your free Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+### Useful Commands
 
-5. Run the development server:
 ```bash
 npm run dev
-```
-
-6. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-**For detailed setup instructions, see [SETUP.md](./SETUP.md)**
-
-### Build for Production
-
-```bash
+npm run lint
+npm run typecheck
 npm run build
-npm start
+npm run check
+npm run test:fallback
+npm run verify-api
 ```
 
-## Deployment on Vercel
+## Environment Variables
 
-This project is optimized for Vercel deployment:
+Use `.env.example` as the canonical template.
 
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Vercel will automatically detect Next.js and configure build settings
-4. Deploy!
+- `GEMINI_API_KEY`: required for live Gemini recommendations
+- `DEMO_EMAIL`: demo login email
+- `DEMO_PASSWORD`: demo login password
+- `NEXT_PUBLIC_APP_URL`: public app URL for the active environment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+## Current Limitations
 
-### Environment Variables
+- Authentication is mock-only and not session-backed.
+- User data, selected plans, and orders are stored in `localStorage`.
+- Subscription and payment flows are simulated.
+- Rate limiting is in-memory and not suitable for horizontally scaled deployments.
+- Observability, audit logging, and environment separation are not yet implemented.
+- The test suite is incomplete: there is a Jest-style spec file but no configured Jest or Vitest runner in `package.json`.
 
-**Required for AI Features:**
-```bash
-GEMINI_API_KEY=your-gemini-api-key-here
-```
+## Documentation
 
-**Optional (Demo Defaults):**
-```bash
-DEMO_EMAIL=demo@healthybite.com
-DEMO_PASSWORD=demo123
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+Project-specific docs now live under `docs/`:
 
-See [SETUP.md](./SETUP.md) for detailed configuration guide.
+- `docs/README.md`
+- `docs/SETUP.md`
+- `docs/QUICKSTART.md`
+- `docs/TESTING.md`
+- `docs/GEMINI_INTEGRATION_SUMMARY.md`
+- `docs/MVP_CHECKLIST.md`
 
-## User Flow
+## Engineering Standards
 
-1. **Landing Page** → User learns about HealthyBite
-2. **Registration** → User creates an account
-3. **Health Questionnaire** → User completes 12-question profile (4 steps)
-4. **Recommendations** → User sees personalized meal suggestions with nutritional info
-5. **Subscription Plans** → User selects a plan (Weekly/Monthly/Quarterly)
-6. **Payment** → User enters payment details (mock)
-7. **Success** → User receives confirmation and order details
+- CI is defined in `.github/workflows/ci.yml`.
+- Contribution expectations are defined in `CONTRIBUTING.md`.
+- Repository ownership remains private and proprietary under `LICENSE`.
+- Versioning should continue with SemVer until the first stable production release.
 
-## Key Components
+## Production Readiness Status
 
-### AI Recommendation Engine
+HealthyBite has strong MVP presentation quality, but it is not near-production yet. To reach production readiness, the next major investments should be:
 
-The AI-powered recommendation system (`lib/llmService.ts`) uses Google Gemini 1.5 Flash to:
-- Generate 5 personalized meal recommendations with full nutritional data
-- Provide health tips tailored to user's BMI and goals
-- Explain why specific meals were chosen
-- Define nutritional strategy (high protein, low carb, etc.)
-- Calculate BMI and categorize health status
-- Fallback to rule-based engine (`lib/recommendationEngine.ts`) if AI unavailable
-
-**Free tier:** 1,500 AI requests per day with Gemini 1.5 Flash
-
-### API Routes
-
-All API routes are mock implementations ready to be connected to a real backend:
-- `POST /api/auth/login` - User authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/profile` - Save health profile
-- `GET /api/profile` - Retrieve health profile
-- `POST /api/recommendations` - Generate meal recommendations
-- `POST /api/subscription` - Create subscription
-
-## Future Enhancements
-
-- [x] AI-powered meal recommendations ✅ (Gemini 1.5 Flash)
-- [x] Demo authentication with credentials ✅
-- [ ] Real database integration (PostgreSQL/MongoDB)
-- [ ] JWT-based authentication
-- [ ] Real payment gateway (Stripe/Razorpay)
-- [ ] User dashboard with order tracking
-- [ ] Meal customization and swapping
-- [ ] Weekly meal calendar
-- [ ] Push notifications
-- [ ] Email confirmations
-- [ ] Admin panel for meal management
-
-## MVP Limitations
-
-This is an MVP (Minimum Viable Product):
-- Authentication uses demo credentials + localStorage (not secure for production)
-- Payment is mocked (no real transactions)
-- AI recommendations limited to Gemini free tier (1,500 requests/day)
-- No real database (data stored in localStorage)
-- No email notifications
-
-**Demo Credentials:**
-- Email: demo@healthybite.com
-- Password: demo123
-
-## Performance
-
-- **Build Size**: ~102 kB shared JS
-- **Static Pages**: All pages are statically generated for optimal performance
-- **Load Time**: <2 seconds on average
-- **Lighthouse Score**: Optimized for performance, accessibility, and SEO
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers (iOS Safari, Chrome Mobile)
-
-## License
-
-This project is private and proprietary.
-
-## Support
-
-For questions or issues, please contact the development team.
-
----
-
-**Built with ❤️ for healthy living**
+1. Replace demo auth and local storage persistence with a real backend.
+2. Add database schema management and migrations.
+3. Introduce robust API validation, centralized logging, and managed rate limiting.
+4. Add CI quality gates beyond lint, typecheck, and build, including real automated tests.
+5. Separate environments and secrets cleanly across development, staging, and production.
