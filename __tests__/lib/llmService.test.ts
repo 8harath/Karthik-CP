@@ -10,7 +10,7 @@
  * 6. Error handling
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   generateMealRecommendationsWithLLM,
   isLLMConfigured

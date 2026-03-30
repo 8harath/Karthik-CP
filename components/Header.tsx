@@ -4,28 +4,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      try {
-        const parsed = JSON.parse(user);
-        setIsLoggedIn(true);
-        setUserName(parsed.name || parsed.email?.split("@")[0] || "User");
-      } catch {
-        setIsLoggedIn(false);
-      }
-    }
-  }, [pathname]); // Re-check on route change
+  const isLoggedIn = !loading && !!user;
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -38,14 +28,12 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("healthProfile");
-    localStorage.removeItem("subscription");
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await signOut();
     setProfileOpen(false);
     setMobileMenuOpen(false);
     router.push("/");
+    router.refresh();
   };
 
   const navItems = isLoggedIn
@@ -58,7 +46,6 @@ export default function Header() {
     ]
     : [
       { href: "/", label: "Home" },
-      { href: "/questionnaire", label: "Questionnaire" },
       { href: "/subscriptions", label: "Plans" },
     ];
 
@@ -120,7 +107,7 @@ export default function Header() {
                   <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 animate-scale-in z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
                       <p className="text-sm font-semibold truncate">{userName}</p>
-                      <p className="text-xs text-gray-500">Free Plan</p>
+                      <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>
                     <Link
                       href="/dashboard"
@@ -154,7 +141,7 @@ export default function Header() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : !loading ? (
               /* Auth buttons */
               <div className="hidden md:flex items-center space-x-2">
                 <Link
@@ -170,7 +157,7 @@ export default function Header() {
                   Get Started
                 </Link>
               </div>
-            )}
+            ) : null}
 
             {/* Mobile menu button */}
             <button

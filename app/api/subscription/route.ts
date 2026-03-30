@@ -1,58 +1,115 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { subscriptionSchema } from "@/lib/validations";
+import { success, error } from "@/lib/apiResponse";
+import { logger } from "@/lib/logger";
+
+const planDurations: Record<string, number> = {
+  weekly: 7,
+  monthly: 30,
+  quarterly: 90,
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const { planId, userId } = await request.json();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // Mock subscription creation - in production, process payment and save to database
-    if (!planId) {
-      return NextResponse.json(
-        { error: "Plan ID is required" },
-        { status: 400 }
-      );
+    if (!user) {
+      return error("Unauthorized", 401);
     }
 
-    const subscription = {
-      id: `sub_${Math.random().toString(36).substr(2, 9)}`,
-      planId,
-      userId: userId || "mock-user-id",
-      status: "active",
-      startDate: new Date().toISOString(),
-      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    };
+    const body = await request.json();
+    const parsed = subscriptionSchema.safeParse(body);
 
-    return NextResponse.json({
-      success: true,
+    if (!parsed.success) {
+      const messages = parsed.error.issues.map((e: { message: string }) => e.message).join("; ");
+      return error(messages, 400);
+    }
+
+    const durationDays = planDurations[parsed.data.plan] || 30;
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durationDays);
+
+    // Upsert subscription
+    const { data: subscription, error: subError } = await supabase
+      .from("subscriptions")
+      .upsert(
+        {
+          user_id: user.id,
+          plan: parsed.data.plan,
+          price: parsed.data.price,
+          status: "active",
+          start_date: new Date().toISOString(),
+          end_date: endDate.toISOString(),
+        },
+        { onConflict: "user_id" }
+      )
+      .select()
+      .single();
+
+    if (subError) {
+      logger.error("Subscription error", { userId: user.id, error: subError.message });
+      return error("Failed to create subscription", 500);
+    }
+
+    // Create order
+    const orderId = `HB${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        subscription_id: subscription.id,
+        plan: parsed.data.plan,
+        amount: parsed.data.price,
+        currency: "INR",
+        status: "completed",
+        order_id: orderId,
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      logger.error("Order creation error", { userId: user.id, error: orderError.message });
+      return error("Failed to create order", 500);
+    }
+
+    logger.info("Subscription created", { userId: user.id, plan: parsed.data.plan });
+    return success({
       subscription,
+      order,
       message: "Subscription created successfully",
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (err) {
+    logger.error("Subscription API error", { error: err instanceof Error ? err.message : "Unknown" });
+    return error("Internal server error", 500);
   }
 }
 
 export async function GET() {
   try {
-    // Mock subscription retrieval
-    const mockSubscription = {
-      id: "sub_mock123",
-      planId: "monthly",
-      status: "active",
-      startDate: new Date().toISOString(),
-      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    };
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    return NextResponse.json({
-      success: true,
-      subscription: mockSubscription,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    if (!user) {
+      return error("Unauthorized", 401);
+    }
+
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    return success({ subscription, orders: orders || [] });
+  } catch (err) {
+    logger.error("Subscription GET error", { error: err instanceof Error ? err.message : "Unknown" });
+    return error("Internal server error", 500);
   }
 }
