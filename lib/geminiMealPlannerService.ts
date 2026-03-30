@@ -64,7 +64,10 @@ export async function generateWeeklyMealPlan(
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const mealsPerDay = preferences?.mealsPerDay || profile.mealsPerDay || 3;
+    const parsedMealsPerDay = Number.parseInt(profile.mealsPerDay, 10);
+    const mealsPerDay =
+      preferences?.mealsPerDay ??
+      (Number.isFinite(parsedMealsPerDay) ? parsedMealsPerDay : 3);
     const includeSnacks = preferences?.includeSnacks ?? false;
 
     const prompt = createMealPlanPrompt(profile, startDate, mealsPerDay, includeSnacks);
