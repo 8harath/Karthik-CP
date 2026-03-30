@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,33 +22,32 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Login failed");
+      if (authError) {
+        setError(authError.message);
         setLoading(false);
         return;
       }
 
-      // Store user session
-      localStorage.setItem("user", JSON.stringify(data.user));
-
       // Check if user has completed questionnaire
-      const hasCompletedQuestionnaire = localStorage.getItem("healthProfile");
+      const { data: profile } = await supabase
+        .from("health_profiles")
+        .select("id")
+        .single();
 
-      if (hasCompletedQuestionnaire) {
-        router.push("/recommendations");
+      if (redirect) {
+        router.push(redirect);
+      } else if (profile) {
+        router.push("/dashboard");
       } else {
         router.push("/questionnaire");
       }
+      router.refresh();
     } catch (err) {
       console.error("Login error:", err);
       setError("An error occurred. Please try again.");
@@ -61,17 +63,6 @@ export default function LoginPage() {
           <p className="text-gray-600 dark:text-gray-400">
             Sign in to your HealthyBite account
           </p>
-        </div>
-
-        {/* Demo Credentials Info */}
-        <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-            🔑 Demo Credentials
-          </h3>
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p><strong>Email:</strong> demo@healthybite.com</p>
-            <p><strong>Password:</strong> demo123</p>
-          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
@@ -122,16 +113,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">
-                  Remember me
-                </span>
-              </label>
+            <div className="flex items-center justify-end text-sm">
               <Link
                 href="/forgot-password"
                 className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
@@ -163,5 +145,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+        <div className="animate-pulse text-gray-500">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -6,6 +6,11 @@ on:
     branches:
       - main
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+  GROQ_API_KEY: placeholder-key
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -29,5 +34,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Test
+        run: npm test -- --run
+
       - name: Build
         run: npm run build
+
+      - name: Security audit
+        run: npm audit --audit-level=high || true

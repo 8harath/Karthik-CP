@@ -22,6 +22,7 @@ export default function QuestionnairePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [stepErrors, setStepErrors] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<HealthProfile>({
     age: "",
     gender: "",
@@ -89,21 +90,37 @@ export default function QuestionnairePage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validateStep(step);
     setStepErrors(errors);
     if (errors.length > 0) return;
 
-    // Save health profile to localStorage
-    localStorage.setItem("healthProfile", JSON.stringify(formData));
-    // Redirect to recommendations
-    router.push("/recommendations");
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setStepErrors([data.error || "Failed to save profile"]);
+        setSubmitting(false);
+        return;
+      }
+
+      router.push("/recommendations");
+    } catch {
+      setStepErrors(["An error occurred. Please try again."]);
+      setSubmitting(false);
+    }
   };
 
   const updateField = (field: keyof HealthProfile, value: string) => {
     setFormData({ ...formData, [field]: value });
-    // Clear errors when user starts editing
     if (stepErrors.length > 0) {
       setStepErrors([]);
     }
@@ -405,9 +422,10 @@ export default function QuestionnairePage() {
               ) : (
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+                  disabled={submitting}
+                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Complete Profile
+                  {submitting ? "Saving..." : "Complete Profile"}
                 </button>
               )}
             </div>

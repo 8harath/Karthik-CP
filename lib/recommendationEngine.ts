@@ -626,13 +626,27 @@ export function generateRecommendations(profile: HealthProfile): MealRecommendat
   // Return top 5 recommendations
   recommendations = filteredMeals.slice(0, 5);
 
-  // If we don't have enough recommendations, add some balanced meals
+  // If we don't have enough recommendations, add more from filtered pool
   if (recommendations.length < 5) {
     const existing = new Set(recommendations.map(m => m.id));
-    const balanced = mealDatabase
+    const allergyKeywords = (profile.allergies || "").toLowerCase().split(",").map(a => a.trim()).filter(a => a.length > 0);
+    const extra = mealDatabase
       .filter(m => !existing.has(m.id))
+      .filter(m => {
+        if (allergyKeywords.length === 0) return true;
+        const mealLower = `${m.name} ${m.description}`.toLowerCase();
+        return !allergyKeywords.some(allergen =>
+          mealLower.includes(allergen) ||
+          (allergen.includes("dairy") && (mealLower.includes("cheese") || mealLower.includes("paneer") || mealLower.includes("yogurt") || mealLower.includes("butter") || mealLower.includes("milk"))) ||
+          (allergen.includes("gluten") && (mealLower.includes("pasta") || mealLower.includes("bread") || mealLower.includes("toast") || mealLower.includes("roti") || mealLower.includes("naan") || mealLower.includes("wrap"))) ||
+          (allergen.includes("nut") && (mealLower.includes("peanut") || mealLower.includes("almond") || mealLower.includes("cashew"))) ||
+          (allergen.includes("seafood") && (mealLower.includes("shrimp") || mealLower.includes("salmon") || mealLower.includes("fish"))) ||
+          (allergen.includes("egg") && mealLower.includes("egg")) ||
+          (allergen.includes("soy") && mealLower.includes("tofu"))
+        );
+      })
       .slice(0, 5 - recommendations.length);
-    recommendations = [...recommendations, ...balanced];
+    recommendations = [...recommendations, ...extra];
   }
 
   return recommendations;

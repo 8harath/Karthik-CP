@@ -1,46 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
-
-// Demo credentials from environment variables
-const DEMO_EMAIL = process.env.DEMO_EMAIL || "demo@healthybite.com";
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "demo123";
+import { NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { success, error } from "@/lib/apiResponse";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Validate input
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
+      return error("Email and password are required", 400);
     }
 
-    // Demo authentication - check against demo credentials
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      const user = {
-        id: "demo-user-001",
-        email: DEMO_EMAIL,
-        name: "Demo User",
-      };
+    const supabase = await createClient();
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      return NextResponse.json({
-        success: true,
-        user,
-        message: "Login successful",
-      });
+    if (authError) {
+      logger.warn("Login failed", { email, error: authError.message });
+      return error(authError.message, 401);
     }
 
-    // Invalid credentials
-    return NextResponse.json(
-      { error: "Invalid email or password" },
-      { status: 401 }
-    );
-  } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return success({
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.full_name,
+      },
+      message: "Login successful",
+    });
+  } catch (err) {
+    logger.error("Login error", { error: err instanceof Error ? err.message : "Unknown" });
+    return error("Internal server error", 500);
   }
 }
