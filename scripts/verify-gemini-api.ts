@@ -1,17 +1,17 @@
 /**
- * Standalone Gemini API Verification Script
+ * Standalone Groq API Verification Script
  *
- * This script tests the Gemini API key directly without running the full application.
+ * This script tests the Groq API key directly without running the full application.
  * It verifies:
  * 1. API key is configured
- * 2. Gemini API is accessible
+ * 2. Groq API is accessible
  * 3. API can generate meal recommendations
  * 4. Response parsing works correctly
  *
  * Usage: npx tsx scripts/verify-gemini-api.ts
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -28,7 +28,7 @@ interface TestResult {
 const results: TestResult[] = [];
 
 function log(result: TestResult) {
-  const icon = result.status === 'PASS' ? '✓' : result.status === 'FAIL' ? '✗' : '⚠';
+  const icon = result.status === 'PASS' ? '\u2713' : result.status === 'FAIL' ? '\u2717' : '\u26A0';
   const color = result.status === 'PASS' ? '\x1b[32m' : result.status === 'FAIL' ? '\x1b[31m' : '\x1b[33m';
   const reset = '\x1b[0m';
 
@@ -37,22 +37,22 @@ function log(result: TestResult) {
 }
 
 async function test1_CheckAPIKey(): Promise<void> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     log({
       test: 'API Key Configuration',
       status: 'FAIL',
-      message: 'GEMINI_API_KEY not found in .env.local'
+      message: 'GROQ_API_KEY not found in .env.local'
     });
     return;
   }
 
-  if (apiKey === 'your-gemini-api-key-here') {
+  if (apiKey === 'your-groq-api-key-here') {
     log({
       test: 'API Key Configuration',
       status: 'FAIL',
-      message: 'GEMINI_API_KEY is still set to placeholder value'
+      message: 'GROQ_API_KEY is still set to placeholder value'
     });
     return;
   }
@@ -65,12 +65,12 @@ async function test1_CheckAPIKey(): Promise<void> {
   });
 }
 
-async function test2_InitializeClient(): Promise<GoogleGenerativeAI | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
+async function test2_InitializeClient(): Promise<Groq | null> {
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     log({
-      test: 'Gemini Client Initialization',
+      test: 'Groq Client Initialization',
       status: 'FAIL',
       message: 'Cannot initialize without API key'
     });
@@ -78,16 +78,16 @@ async function test2_InitializeClient(): Promise<GoogleGenerativeAI | null> {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const groq = new Groq({ apiKey });
     log({
-      test: 'Gemini Client Initialization',
+      test: 'Groq Client Initialization',
       status: 'PASS',
-      message: 'GoogleGenerativeAI client created successfully'
+      message: 'Groq client created successfully'
     });
-    return genAI;
+    return groq;
   } catch (error) {
     log({
-      test: 'Gemini Client Initialization',
+      test: 'Groq Client Initialization',
       status: 'FAIL',
       message: `Failed to create client: ${error instanceof Error ? error.message : String(error)}`
     });
@@ -95,17 +95,17 @@ async function test2_InitializeClient(): Promise<GoogleGenerativeAI | null> {
   }
 }
 
-async function test3_SimpleAPICall(genAI: GoogleGenerativeAI): Promise<void> {
+async function test3_SimpleAPICall(groq: Groq): Promise<void> {
   const startTime = Date.now();
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await groq.chat.completions.create({
+      messages: [{ role: "user", content: "Say 'Hello, HealthyBite!' in exactly 3 words." }],
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 50,
+    });
 
-    const prompt = "Say 'Hello, HealthyBite!' in exactly 3 words.";
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
+    const text = result.choices[0]?.message?.content || "";
     const duration = Date.now() - startTime;
 
     log({
@@ -117,47 +117,30 @@ async function test3_SimpleAPICall(genAI: GoogleGenerativeAI): Promise<void> {
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
-    if (error.message?.includes('API_KEY_INVALID')) {
-      log({
-        test: 'Simple API Call',
-        status: 'FAIL',
-        message: '❌ INVALID API KEY - Please check your GEMINI_API_KEY',
-        duration
-      });
-    } else if (error.message?.includes('PERMISSION_DENIED')) {
-      log({
-        test: 'Simple API Call',
-        status: 'FAIL',
-        message: '❌ PERMISSION DENIED - API key may lack necessary permissions',
-        duration
-      });
-    } else if (error.message?.includes('RESOURCE_EXHAUSTED')) {
-      log({
-        test: 'Simple API Call',
-        status: 'WARN',
-        message: '⚠️  API quota exhausted - Wait and try again later',
-        duration
-      });
-    } else {
-      log({
-        test: 'Simple API Call',
-        status: 'FAIL',
-        message: `API call failed: ${error.message || String(error)}`,
-        duration
-      });
-    }
+    log({
+      test: 'Simple API Call',
+      status: 'FAIL',
+      message: `API call failed: ${error.message || String(error)}`,
+      duration
+    });
   }
 }
 
-async function test4_MealRecommendationGeneration(genAI: GoogleGenerativeAI): Promise<void> {
+async function test4_MealRecommendationGeneration(groq: Groq): Promise<void> {
   const startTime = Date.now();
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are a nutritionist. Always respond with valid JSON only.",
+        },
+        {
+          role: "user",
+          content: `Generate a JSON object with 2 meal recommendations for a person who wants to lose weight.
 
-    const prompt = `You are a nutritionist. Generate a JSON object with 2 meal recommendations for a person who wants to lose weight.
-
-Response format (MUST BE VALID JSON):
+Response format:
 {
   "meals": [
     {
@@ -170,26 +153,20 @@ Response format (MUST BE VALID JSON):
       "fats": 12,
       "type": "vegetarian",
       "tags": ["weight-loss"],
-      "image": "🥗"
+      "image": "salad"
     }
   ]
-}
+}`,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.7,
+      max_tokens: 1024,
+      response_format: { type: "json_object" },
+    });
 
-Return ONLY the JSON object, no additional text.`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Try to parse the response
-    let cleanedText = text.trim();
-    if (cleanedText.startsWith("```json")) {
-      cleanedText = cleanedText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
-    } else if (cleanedText.startsWith("```")) {
-      cleanedText = cleanedText.replace(/```\n?/g, "");
-    }
-
-    const parsed = JSON.parse(cleanedText);
+    const text = result.choices[0]?.message?.content || "";
+    const parsed = JSON.parse(text);
 
     if (!parsed.meals || !Array.isArray(parsed.meals)) {
       throw new Error('Response missing meals array');
@@ -204,10 +181,9 @@ Return ONLY the JSON object, no additional text.`;
       duration
     });
 
-    // Log sample meal
     if (parsed.meals.length > 0) {
       const meal = parsed.meals[0];
-      console.log(`\n  Sample Meal: ${meal.image} ${meal.name}`);
+      console.log(`\n  Sample Meal: ${meal.name}`);
       console.log(`  Description: ${meal.description}`);
       console.log(`  Nutrition: ${meal.calories} cal | ${meal.protein}g protein | ${meal.carbs}g carbs | ${meal.fats}g fats\n`);
     }
@@ -224,140 +200,30 @@ Return ONLY the JSON object, no additional text.`;
   }
 }
 
-async function test5_FullHealthProfileRecommendation(genAI: GoogleGenerativeAI): Promise<void> {
-  const startTime = Date.now();
-
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    const prompt = `You are a professional nutritionist. Based on the health profile below, generate 3 personalized meal recommendations.
-
-**User Health Profile:**
-- Age: 30
-- Gender: male
-- Height: 175 cm
-- Weight: 80 kg
-- BMI: 26.1 (Overweight)
-- Activity Level: moderate
-- Health Goal: weight-loss
-- Dietary Preference: vegetarian
-- Allergies: None
-- Meals Per Day: 3
-- Budget: medium
-- Medical Conditions: None
-
-**Response Format (MUST BE VALID JSON):**
-{
-  "meals": [
-    {
-      "id": 1,
-      "name": "Meal Name",
-      "description": "Brief appetizing description",
-      "calories": 400,
-      "protein": 25,
-      "carbs": 40,
-      "fats": 12,
-      "type": "vegetarian",
-      "tags": ["weight-loss", "vegetarian"],
-      "image": "🥗"
-    }
-  ],
-  "healthTips": [
-    "Tip 1 for weight loss",
-    "Tip 2 for activity level",
-    "Tip 3 for overall health"
-  ],
-  "whyTheseMeals": "Brief explanation",
-  "nutritionalFocus": "Strategy statement"
-}
-
-Return ONLY the JSON object, no additional text.`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse response
-    let cleanedText = text.trim();
-    if (cleanedText.startsWith("```json")) {
-      cleanedText = cleanedText.replace(/```json\n?/g, "").replace(/```\n?/g, "");
-    } else if (cleanedText.startsWith("```")) {
-      cleanedText = cleanedText.replace(/```\n?/g, "");
-    }
-
-    const parsed = JSON.parse(cleanedText);
-
-    if (!parsed.meals || !Array.isArray(parsed.meals)) {
-      throw new Error('Response missing meals array');
-    }
-
-    if (!parsed.healthTips || !Array.isArray(parsed.healthTips)) {
-      throw new Error('Response missing healthTips array');
-    }
-
-    const duration = Date.now() - startTime;
-
-    log({
-      test: 'Full Health Profile Recommendation',
-      status: 'PASS',
-      message: `Generated complete recommendation with ${parsed.meals.length} meals and ${parsed.healthTips.length} health tips`,
-      duration
-    });
-
-    // Display results
-    console.log(`\n  Nutritional Focus: ${parsed.nutritionalFocus}`);
-    console.log(`  Why These Meals: ${parsed.whyTheseMeals}`);
-    console.log(`\n  Health Tips:`);
-    parsed.healthTips.forEach((tip: string, i: number) => {
-      console.log(`    ${i + 1}. ${tip}`);
-    });
-    console.log('');
-
-  } catch (error: any) {
-    const duration = Date.now() - startTime;
-
-    log({
-      test: 'Full Health Profile Recommendation',
-      status: 'FAIL',
-      message: `Failed: ${error.message || String(error)}`,
-      duration
-    });
-  }
-}
-
 async function main() {
   console.log('\n========================================');
-  console.log('🧪 Gemini API Verification Tests');
+  console.log('Groq API Verification Tests');
   console.log('========================================\n');
 
-  // Test 1: Check API Key
   await test1_CheckAPIKey();
 
-  if (!process.env.GEMINI_API_KEY) {
-    console.log('\n❌ Cannot proceed without API key. Please configure GEMINI_API_KEY in .env.local\n');
+  if (!process.env.GROQ_API_KEY) {
+    console.log('\nCannot proceed without API key. Please configure GROQ_API_KEY in .env.local\n');
     process.exit(1);
   }
 
-  // Test 2: Initialize Client
-  const genAI = await test2_InitializeClient();
+  const groq = await test2_InitializeClient();
 
-  if (!genAI) {
-    console.log('\n❌ Cannot proceed without Gemini client.\n');
+  if (!groq) {
+    console.log('\nCannot proceed without Groq client.\n');
     process.exit(1);
   }
 
-  // Test 3: Simple API Call
-  await test3_SimpleAPICall(genAI);
+  await test3_SimpleAPICall(groq);
+  await test4_MealRecommendationGeneration(groq);
 
-  // Test 4: Meal Recommendation Generation
-  await test4_MealRecommendationGeneration(genAI);
-
-  // Test 5: Full Health Profile Recommendation
-  await test5_FullHealthProfileRecommendation(genAI);
-
-  // Summary
   console.log('\n========================================');
-  console.log('📊 Test Summary');
+  console.log('Test Summary');
   console.log('========================================\n');
 
   const passed = results.filter(r => r.status === 'PASS').length;
@@ -365,18 +231,15 @@ async function main() {
   const warned = results.filter(r => r.status === 'WARN').length;
 
   console.log(`Total Tests: ${results.length}`);
-  console.log(`\x1b[32m✓ Passed: ${passed}\x1b[0m`);
-  console.log(`\x1b[31m✗ Failed: ${failed}\x1b[0m`);
-  console.log(`\x1b[33m⚠ Warnings: ${warned}\x1b[0m`);
+  console.log(`\x1b[32mPassed: ${passed}\x1b[0m`);
+  console.log(`\x1b[31mFailed: ${failed}\x1b[0m`);
+  console.log(`\x1b[33mWarnings: ${warned}\x1b[0m`);
 
-  if (failed === 0 && warned === 0) {
-    console.log('\n🎉 All tests passed! Your Gemini API integration is working perfectly.\n');
-    process.exit(0);
-  } else if (failed === 0) {
-    console.log('\n⚠️  All tests passed with warnings. Your API integration works but has minor issues.\n');
+  if (failed === 0) {
+    console.log('\nAll tests passed! Your Groq API integration is working.\n');
     process.exit(0);
   } else {
-    console.log('\n❌ Some tests failed. Please review the errors above.\n');
+    console.log('\nSome tests failed. Please review the errors above.\n');
     process.exit(1);
   }
 }

@@ -1,15 +1,15 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { HealthProfile, MealRecommendation, generateRecommendations as fallbackRecommendations } from "./recommendationEngine";
 
-// Initialize Gemini API
-const getGeminiClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+// Initialize Groq client
+const getGroqClient = () => {
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured in environment variables");
+    throw new Error("GROQ_API_KEY is not configured in environment variables");
   }
 
-  return new GoogleGenerativeAI(apiKey);
+  return new Groq({ apiKey });
 };
 
 export interface LLMRecommendationResponse {
@@ -53,26 +53,13 @@ async function withRetry<T>(
 }
 
 /**
- * Add a timeout to a promise
- */
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs)
-    ),
-  ]);
-}
-
-/**
- * Generate AI-powered meal recommendations using Gemini 2.0 Flash
+ * Generate AI-powered meal recommendations using Groq (Llama 3.3 70B)
  */
 export async function generateMealRecommendationsWithLLM(
   profile: HealthProfile
 ): Promise<LLMRecommendationResponse> {
   try {
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const groq = getGroqClient();
 
     // Calculate BMI
     const height = parseFloat(profile.height);
@@ -80,20 +67,34 @@ export async function generateMealRecommendationsWithLLM(
     const bmi = calculateBMI(height, weight);
     const bmiCategory = getBMICategory(bmi);
 
-    // Create detailed prompt for Gemini
+    // Create detailed prompt
     const prompt = createMealRecommendationPrompt(profile, bmi, bmiCategory);
 
-    // Generate recommendations with retry and timeout
-    const result = await withRetry(
-      () => withTimeout(model.generateContent(prompt), 30000),
+    // Generate recommendations with retry
+    const chatCompletion = await withRetry(
+      () => groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional nutritionist and meal planning expert. Always respond with valid JSON only, no additional text.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.7,
+        max_tokens: 2048,
+        response_format: { type: "json_object" },
+      }),
       2
     );
 
-    const response = await result.response;
-    const text = response.text();
+    const text = chatCompletion.choices[0]?.message?.content || "";
 
     // Parse JSON response from LLM
-    const parsedResponse = parseGeminiResponse(text);
+    const parsedResponse = parseLLMResponse(text);
 
     return {
       meals: parsedResponse.meals,
@@ -116,14 +117,14 @@ export async function generateMealRecommendationsWithLLM(
 }
 
 /**
- * Create a detailed prompt for Gemini to generate personalized meal recommendations
+ * Create a detailed prompt for generating personalized meal recommendations
  */
 function createMealRecommendationPrompt(
   profile: HealthProfile,
   bmi: number,
   bmiCategory: string
 ): string {
-  return `You are a professional nutritionist and meal planning expert. Based on the user's health profile, generate 5 personalized meal recommendations.
+  return `Based on the user's health profile, generate 5 personalized meal recommendations.
 
 **User Health Profile:**
 - Age: ${profile.age}
@@ -162,7 +163,7 @@ Generate 5 personalized South Indian meal recommendations that align with the us
       "fats": 15,
       "type": "${profile.dietaryPreference.toLowerCase()}",
       "tags": ["relevant", "tags"],
-      "image": "🍽️"
+      "image": "emoji"
     }
   ],
   "healthTips": [
@@ -176,7 +177,7 @@ Generate 5 personalized South Indian meal recommendations that align with the us
 
 **Important Guidelines:**
 - ALL meals MUST be authentic South Indian dishes only
-- Use appropriate emojis for meal images (🥞 for dosa/uttapam, 🍛 for curry, 🍚 for rice dishes, 🥣 for upma/pongal, etc.)
+- Use appropriate emojis for meal images
 - Focus on traditional South Indian ingredients: rice, lentils, coconut, curry leaves, tamarind, etc.
 - Calories should align with activity level and health goals
 - If goal is weight-loss, keep meals under 450 calories
@@ -184,15 +185,13 @@ Generate 5 personalized South Indian meal recommendations that align with the us
 - If goal is energy, ensure adequate carbs (>50g per meal)
 - Avoid any ingredients related to allergies
 - Make descriptions appetizing and motivating
-- Include regional variations (Kerala, Tamil Nadu, Karnataka, Andhra Pradesh cuisines)
-
-Return ONLY the JSON object, no additional text.`;
+- Include regional variations (Kerala, Tamil Nadu, Karnataka, Andhra Pradesh cuisines)`;
 }
 
 /**
- * Parse Gemini's response and extract meal recommendations
+ * Parse LLM response and extract meal recommendations
  */
-function parseGeminiResponse(text: string): {
+function parseLLMResponse(text: string): {
   meals: MealRecommendation[];
   healthTips: string[];
   whyTheseMeals: string;
@@ -234,7 +233,7 @@ function parseGeminiResponse(text: string): {
       fats: Number(meal.fats) || 15,
       type: meal.type || "balanced",
       tags: Array.isArray(meal.tags) ? meal.tags : [],
-      image: meal.image || "🍽️",
+      image: meal.image || "plate",
     }));
 
     return {
@@ -244,7 +243,7 @@ function parseGeminiResponse(text: string): {
       nutritionalFocus: parsed.nutritionalFocus || "Balanced nutrition for your goals.",
     };
   } catch (error) {
-    console.error("Error parsing Gemini response:", error);
+    console.error("Error parsing LLM response:", error);
     console.error("Raw response text:", text.substring(0, 500));
     throw new Error("Failed to parse LLM response");
   }
@@ -315,5 +314,5 @@ function getBMICategory(bmi: number): string {
  * Validate that API key is configured
  */
 export function isLLMConfigured(): boolean {
-  return !!process.env.GEMINI_API_KEY;
+  return !!process.env.GROQ_API_KEY;
 }

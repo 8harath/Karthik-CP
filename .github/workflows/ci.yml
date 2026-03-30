@@ -9,7 +9,7 @@ on:
 env:
   NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
-  GEMINI_API_KEY: placeholder-key
+  GROQ_API_KEY: placeholder-key
 
 jobs:
   quality:

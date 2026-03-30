@@ -184,9 +184,9 @@ console.log('✓ Provides nutritional information');
 console.log('✓ Filters by activity level\n');
 
 console.log('💡 This fallback system ensures the application works');
-console.log('   seamlessly even without a valid Gemini API key.\n');
+console.log('   seamlessly even without a valid Groq API key.\n');
 
 console.log('🚀 To enable AI-powered recommendations:');
-console.log('   1. Get a valid API key from https://aistudio.google.com/app/apikey');
-console.log('   2. Update GEMINI_API_KEY in .env.local');
+console.log('   1. Get a free API key from https://console.groq.com/keys');
+console.log('   2. Update GROQ_API_KEY in .env.local');
 console.log('   3. Run: npm run verify-api\n');

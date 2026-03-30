@@ -128,10 +128,10 @@ export async function POST(request: NextRequest) {
     let recommendations;
     let insights;
     let usedFallback = false;
-    let source = "gemini";
+    let source = "groq";
 
     if (!isLLMConfigured()) {
-      logger.warn("GEMINI_API_KEY not configured - using fallback engine");
+      logger.warn("GROQ_API_KEY not configured - using fallback engine");
       const recs = generateRecommendations(healthProfile);
       const height = parseFloat(healthProfile.height);
       const weight = parseFloat(healthProfile.weight);
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       recommendations = result.meals;
       insights = result.insights;
       usedFallback = result.usedFallback || false;
-      source = usedFallback ? "fallback" : "gemini";
+      source = usedFallback ? "fallback" : "groq";
     }
 
     // Store recommendations in DB

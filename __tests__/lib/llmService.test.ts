@@ -1,9 +1,9 @@
 /**
- * Unit Tests for LLM Service (Gemini API Integration)
+ * Unit Tests for LLM Service (Groq API Integration)
  *
  * These tests verify:
  * 1. API key configuration
- * 2. Gemini client initialization
+ * 2. Groq client initialization
  * 3. Meal recommendation generation
  * 4. Response parsing
  * 5. Fallback mechanisms
@@ -17,7 +17,7 @@ import {
 } from '@/lib/llmService';
 import { HealthProfile } from '@/lib/recommendationEngine';
 
-describe('LLM Service - Gemini API Integration', () => {
+describe('LLM Service - Groq API Integration', () => {
 
   // Sample health profile for testing
   const sampleProfile: HealthProfile = {
@@ -36,7 +36,7 @@ describe('LLM Service - Gemini API Integration', () => {
   };
 
   describe('Configuration Tests', () => {
-    it('should detect if GEMINI_API_KEY is configured', () => {
+    it('should detect if GROQ_API_KEY is configured', () => {
       const isConfigured = isLLMConfigured();
       expect(typeof isConfigured).toBe('boolean');
 
@@ -44,15 +44,15 @@ describe('LLM Service - Gemini API Integration', () => {
       console.log(`✓ API Key Configuration Status: ${isConfigured ? 'Configured ✓' : 'Not Configured ✗'}`);
     });
 
-    it('should have GEMINI_API_KEY in environment', () => {
-      const apiKey = process.env.GEMINI_API_KEY;
+    it('should have GROQ_API_KEY in environment', () => {
+      const apiKey = process.env.GROQ_API_KEY;
 
       if (apiKey) {
         console.log(`✓ API Key found: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`);
         expect(apiKey).toBeTruthy();
         expect(apiKey.length).toBeGreaterThan(20);
       } else {
-        console.warn('⚠️  GEMINI_API_KEY not found in environment');
+        console.warn('⚠️  GROQ_API_KEY not found in environment');
       }
     });
   });
