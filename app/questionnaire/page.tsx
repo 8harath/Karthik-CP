@@ -16,6 +16,7 @@ interface HealthProfile {
   budget: string;
   cookingPreference: string;
   medicalConditions: string;
+  location: string;
 }
 
 export default function QuestionnairePage() {
@@ -23,6 +24,7 @@ export default function QuestionnairePage() {
   const [step, setStep] = useState(1);
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [showTransition, setShowTransition] = useState(false);
   const [formData, setFormData] = useState<HealthProfile>({
     age: "",
     gender: "",
@@ -36,6 +38,7 @@ export default function QuestionnairePage() {
     budget: "",
     cookingPreference: "",
     medicalConditions: "",
+    location: "",
   });
 
   const totalSteps = 4;
@@ -55,6 +58,7 @@ export default function QuestionnairePage() {
         if (!formData.weight || parseInt(formData.weight) < 30 || parseInt(formData.weight) > 300) {
           errors.push("Please enter a valid weight (30-300 kg)");
         }
+        if (!formData.location) errors.push("Please select your location");
         break;
       case 2:
         if (!formData.activityLevel) errors.push("Please select your activity level");
@@ -112,6 +116,9 @@ export default function QuestionnairePage() {
         return;
       }
 
+      // Show transition animation before navigating
+      setShowTransition(true);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       router.push("/recommendations");
     } catch {
       setStepErrors(["An error occurred. Please try again."]);
@@ -125,6 +132,36 @@ export default function QuestionnairePage() {
       setStepErrors([]);
     }
   };
+
+  if (showTransition) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="text-center space-y-6 px-4">
+          {/* Animated rings */}
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-4 border-primary-200 dark:border-primary-800" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary-600 animate-spin" />
+            <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-green-500 animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
+            <div className="absolute inset-0 flex items-center justify-center text-3xl">
+              🍽️
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Profile Saved!</h2>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              Crafting your personalized meal plan...
+            </p>
+          </div>
+          {/* Animated dots */}
+          <div className="flex justify-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-primary-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-3 h-3 rounded-full bg-primary-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="w-3 h-3 rounded-full bg-primary-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-200px)] py-12 px-4">
@@ -235,6 +272,60 @@ export default function QuestionnairePage() {
                       max="300"
                     />
                   </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block text-sm font-medium mb-2">
+                    Location / Region <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.location}
+                    onChange={(e) => updateField("location", e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                  >
+                    <option value="">Select your region</option>
+                    <optgroup label="South India">
+                      <option value="tamil-nadu">Tamil Nadu</option>
+                      <option value="kerala">Kerala</option>
+                      <option value="karnataka">Karnataka</option>
+                      <option value="andhra-pradesh">Andhra Pradesh</option>
+                      <option value="telangana">Telangana</option>
+                    </optgroup>
+                    <optgroup label="North India">
+                      <option value="delhi">Delhi / NCR</option>
+                      <option value="uttar-pradesh">Uttar Pradesh</option>
+                      <option value="punjab">Punjab</option>
+                      <option value="haryana">Haryana</option>
+                      <option value="rajasthan">Rajasthan</option>
+                      <option value="himachal-pradesh">Himachal Pradesh</option>
+                      <option value="jammu-kashmir">Jammu & Kashmir</option>
+                      <option value="uttarakhand">Uttarakhand</option>
+                    </optgroup>
+                    <optgroup label="East India">
+                      <option value="west-bengal">West Bengal</option>
+                      <option value="odisha">Odisha</option>
+                      <option value="bihar">Bihar</option>
+                      <option value="jharkhand">Jharkhand</option>
+                      <option value="assam">Assam</option>
+                      <option value="northeast">Other Northeast</option>
+                    </optgroup>
+                    <optgroup label="West India">
+                      <option value="maharashtra">Maharashtra</option>
+                      <option value="gujarat">Gujarat</option>
+                      <option value="goa">Goa</option>
+                    </optgroup>
+                    <optgroup label="Central India">
+                      <option value="madhya-pradesh">Madhya Pradesh</option>
+                      <option value="chhattisgarh">Chhattisgarh</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                      <option value="other-india">Other (India)</option>
+                      <option value="international">International</option>
+                    </optgroup>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    We use this to recommend regional cuisine that suits your palate
+                  </p>
                 </div>
               </div>
             )}
