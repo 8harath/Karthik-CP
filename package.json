@@ -15,8 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "check": "npm run lint && npm run typecheck && npm run build",
     "test": "vitest",
-    "test:gemini": "tsx scripts/verify-gemini-api.ts",
-    "verify-api": "tsx scripts/verify-gemini-api.ts",
+    "test:groq": "tsx scripts/verify-groq-api.ts",
+    "verify-api": "tsx scripts/verify-groq-api.ts",
     "test:fallback": "tsx scripts/test-fallback.ts"
   },
   "dependencies": {
