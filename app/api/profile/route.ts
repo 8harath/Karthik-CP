@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       budget: parsed.data.budget,
       cooking_preference: parsed.data.cookingPreference,
       medical_conditions: parsed.data.medicalConditions,
+      location: parsed.data.location,
     };
 
     const { data, error: dbError } = await supabase

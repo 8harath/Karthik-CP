@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
       budget: dbProfile.budget,
       cookingPreference: dbProfile.cooking_preference,
       medicalConditions: dbProfile.medical_conditions || "",
+      location: dbProfile.location || "other-india",
     };
 
     let recommendations;

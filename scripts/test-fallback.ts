@@ -30,6 +30,7 @@ const testProfiles: { name: string; profile: HealthProfile }[] = [
       budget: 'medium',
       cookingPreference: 'moderate',
       medicalConditions: '',
+      location: 'karnataka',
     },
   },
   {
@@ -47,6 +48,7 @@ const testProfiles: { name: string; profile: HealthProfile }[] = [
       budget: 'high',
       cookingPreference: 'advanced',
       medicalConditions: '',
+      location: 'punjab',
     },
   },
   {
@@ -64,6 +66,7 @@ const testProfiles: { name: string; profile: HealthProfile }[] = [
       budget: 'medium',
       cookingPreference: 'moderate',
       medicalConditions: '',
+      location: 'tamil-nadu',
     },
   },
   {
@@ -81,6 +84,7 @@ const testProfiles: { name: string; profile: HealthProfile }[] = [
       budget: 'medium',
       cookingPreference: 'moderate',
       medicalConditions: 'high cholesterol',
+      location: 'kerala',
     },
   },
 ];

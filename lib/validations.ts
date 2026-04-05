@@ -22,6 +22,7 @@ export const healthProfileSchema = z.object({
   budget: z.string().min(1, "Budget preference is required"),
   cookingPreference: z.string().min(1, "Cooking preference is required"),
   medicalConditions: z.string().default(""),
+  location: z.string().min(1, "Location is required"),
 });
 
 export const subscriptionSchema = z.object({
