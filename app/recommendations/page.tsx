@@ -116,14 +116,17 @@ export default function RecommendationsPage() {
   useEffect(() => {
     const init = async () => {
       const hasCached = await loadCachedRecommendations();
-      if (hasCached) {
+      if (hasCached && !usedFallback) {
+        // Only use cache if it was AI-generated; stale fallback should be regenerated
         setLoading(false);
       } else {
+        // No cache or stale fallback — generate fresh recommendations
         await generateRecommendations();
       }
     };
     init();
-  }, [loadCachedRecommendations, generateRecommendations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -287,6 +290,16 @@ export default function RecommendationsPage() {
                         </span>
                       ))}
                     </div>
+                    {meal.funFacts && meal.funFacts.length > 0 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mb-3 line-clamp-2 border-l-2 border-amber-400 pl-2">
+                        ✨ {meal.funFacts[0]}
+                      </p>
+                    )}
+                    {meal.tips && meal.tips.length > 0 && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mb-3 line-clamp-1">
+                        💡 {meal.tips[0]}
+                      </p>
+                    )}
                     <span className="text-sm text-primary-600 dark:text-primary-400 font-medium">View Details →</span>
                   </div>
                 </Link>
