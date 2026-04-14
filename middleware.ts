@@ -11,7 +11,31 @@ const protectedRoutes = [
   "/payment",
 ];
 
+// Routes that need no Supabase auth check at all (not protected, no auth-based redirect)
+const skipAuthPaths = ["/", "/subscriptions"];
+
+function applySecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  response.headers.set("X-DNS-Prefetch-Control", "on");
+  // Allow geolocation so the auto-detect location feature works
+  response.headers.set("Permissions-Policy", "camera=(), microphone=()");
+}
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  // For purely public pages with no auth logic, skip the Supabase round-trip entirely.
+  if (skipAuthPaths.includes(pathname)) {
+    const response = NextResponse.next({ request });
+    applySecurityHeaders(response);
+    return response;
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -40,28 +64,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Security headers
-  supabaseResponse.headers.set("X-Frame-Options", "DENY");
-  supabaseResponse.headers.set("X-Content-Type-Options", "nosniff");
-  supabaseResponse.headers.set(
-    "Referrer-Policy",
-    "strict-origin-when-cross-origin"
-  );
-  supabaseResponse.headers.set("X-XSS-Protection", "1; mode=block");
-  supabaseResponse.headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains"
-  );
-  supabaseResponse.headers.set("X-DNS-Prefetch-Control", "on");
-  supabaseResponse.headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()"
-  );
-
-  // Protect authenticated routes
-  const isProtected = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  );
+  applySecurityHeaders(supabaseResponse);
 
   if (isProtected && !user) {
     const loginUrl = new URL("/login", request.url);
