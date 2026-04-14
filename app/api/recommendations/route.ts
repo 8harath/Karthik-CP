@@ -47,13 +47,20 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: rec } = await supabase
-      .from("recommendations")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    const [{ data: rec }, { data: profile }] = await Promise.all([
+      supabase
+        .from("recommendations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from("health_profiles")
+        .select("location")
+        .eq("user_id", user.id)
+        .single(),
+    ]);
 
     if (!rec) {
       return NextResponse.json({ success: true, recommendations: null });
@@ -65,6 +72,7 @@ export async function GET() {
       insights: rec.insights,
       source: rec.source,
       generatedAt: rec.created_at,
+      location: profile?.location || "other-india",
     });
   } catch (error) {
     logger.error("Recommendations GET error", { error: error instanceof Error ? error.message : "Unknown" });
@@ -185,6 +193,7 @@ export async function POST(request: NextRequest) {
         ? "Recommendations generated using fallback engine"
         : "AI-powered recommendations generated successfully",
       usedFallback,
+      location: healthProfile.location,
     });
   } catch (error) {
     logger.error("Recommendations API error", { error: error instanceof Error ? error.message : "Unknown" });
